@@ -9,7 +9,7 @@ $SaveFileDialog = New-Object System.Windows.Forms.SaveFileDialog
 $OpenFileDialog = New-Object System.Windows.Forms.OpenFileDialog
 
 
-cls
+Clear-Host
 Write-Host "-------- AD ATTRIBUTE BULK CHANGE --------`n"
 
 While ($User -ne "done") {
@@ -18,13 +18,13 @@ While ($User -ne "done") {
     
     if ($User -eq "done") {Break}
     
-    $UserObj = Get-ADUser $User -Properties $ADFields | select $ADFields -ErrorAction SilentlyContinue
+    $UserObj = Get-ADUser $User -Properties $ADFields | Select-Object $ADFields -ErrorAction SilentlyContinue
     
-    if ($UserObj -eq $null) { 
+    if ($Null -eq $UserObj) { 
         Write-Host $User" Not Found in AD."
         Continue }
 
-    $ManagerName = Get-ADUser $UserObj.manager | select name
+    $ManagerName = Get-ADUser $UserObj.manager | Select-Object name
     $UserObj.manager = $ManagerName.name
     Write-Output $UserObj
     $AllUsers += $UserObj
@@ -60,7 +60,7 @@ $CSVFile | ForEach-Object {
     $UPN = $PSItem.userprincipalname
     try { 
 
-        $CurrentUser = Get-ADUser -filter 'userprincipalname -eq $UPN' -Properties $Header | select $Header
+        $CurrentUser = Get-ADUser -filter 'userprincipalname -eq $UPN' -Properties $Header | Select-Object $Header
         if ($CurrentUser -eq $null) {
             Write-Output ($PSItem.name + " not found in AD.`n")
             return }
@@ -69,10 +69,9 @@ $CSVFile | ForEach-Object {
         Write-Host $_
         Break }
     
-    $CurrentManager = Get-ADUser -filter 'userprincipalname -eq $UPN' -properties manager | select manager
     $NewManagerName = $PSItem.manager
     
-    try { $NewManagerObj = Get-ADUser -Filter 'name -eq $NewManagerName' | select distinguishedname }
+    try { $NewManagerObj = Get-ADUser -Filter 'name -eq $NewManagerName' | Select-Object distinguishedname }
         catch { write-host $NewManagerName" manager not found in AD." }
     
     $PSItem.manager = $NewManagerObj.distinguishedname
