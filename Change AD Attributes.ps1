@@ -58,13 +58,19 @@ $Header = (Get-Content -path $CSVPath -TotalCount 1).split(',')
 $CSVFile | ForEach-Object {
 
     $UPN = $PSItem.userprincipalname
+    $Name = $PSItem.name
+
     try { 
 
         $CurrentUser = Get-ADUser -filter 'userprincipalname -eq $UPN' -Properties $Header | Select-Object $Header
+        
+        if ($CurrentUser -eq $null) { $CurrentUser = Get-ADUser -filter 'name -eq $Name' -Properties $Header | Select-Object $Header }
+
         if ($CurrentUser -eq $null) {
-            Write-Output ($PSItem.name + " not found in AD.`n")
+            Write-Output ($Name + " " + $UPN + " not found in AD.`n")
             return }
         }
+
     catch { 
         Write-Host $_
         Break }
@@ -81,6 +87,8 @@ $CSVFile | ForEach-Object {
     
     foreach ($Attribute in $Header) {
 
+        if ($Attribute -eq "name") {continue}
+        
         if ( $PSItem.$Attribute -ne $CurrentUser.$Attribute -and [string]::IsNullOrWhiteSpace($PSItem.$Attribute) -ne $True ) { 
             $NewAttributes[$Attribute] = $PSItem.$Attribute 
             }
@@ -92,8 +100,9 @@ $CSVFile | ForEach-Object {
     if($NewAttributes.Count -ne 0) {
 
         Write-Host "Changing:"
+        Write-Output $PSItem.name
         Write-Output $NewAttributes
-        Get-ADUser -filter 'userprincipalname -eq $UPN' | Set-ADUser @NewAttributes 
+        Get-ADUser -filter 'userprincipalname -eq $UPN' | Set-ADUser @NewAttributes
 
         }
 
